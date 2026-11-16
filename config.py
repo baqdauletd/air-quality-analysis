@@ -1,4 +1,3 @@
-"""Project-wide paths and constants (Beijing Multi-Site Air Quality project)."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -15,8 +14,6 @@ POLLUTANTS = ["PM2.5", "PM10", "SO2", "NO2", "CO", "O3"]
 WEATHER = ["TEMP", "PRES", "DEWP", "RAIN", "WSPM"]
 NUMERIC_COLS = POLLUTANTS + WEATHER
 
-# Area type of each station. This is a team assumption based on the station
-# location (central districts = Urban, outer districts = Suburban/Rural).
 AREA_TYPE = {
     "Aotizhongxin": "Urban",
     "Dongsi": "Urban",
@@ -38,6 +35,6 @@ SEASONS = {12: "Winter", 1: "Winter", 2: "Winter",
            9: "Autumn", 10: "Autumn", 11: "Autumn"}
 SEASON_ORDER = ["Winter", "Spring", "Summer", "Autumn"]
 
-MAX_GAP_HOURS = 6        # longest gap that is filled by interpolation
+MAX_GAP_HOURS = 6        # for interpolation
 HEAVY_POLLUTION = 150    # daily mean PM2.5 (ug/m3) treated as a heavy-pollution day
-TEST_START = "2016-03-01"  # forecast test period = last 12 months
+TEST_START = "2016-03-01"  # forecast test period - last 12 months

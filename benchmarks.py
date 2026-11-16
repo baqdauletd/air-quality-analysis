@@ -1,11 +1,3 @@
-"""Comparison of data-processing approaches (requirement: >= 2 approaches + baseline).
-
-Task: monthly mean PM2.5 per station.
- - baseline:  pandas on the raw CSV files (default dtypes)
- - approach A: pandas on the cleaned, dtype-optimised data
- - approach B: SQL (SQLite) GROUP BY
- - approach C: Parquet storage (only if pyarrow is installed)
-"""
 import time
 
 import pandas as pd

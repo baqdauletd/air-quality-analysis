@@ -1,4 +1,3 @@
-"""SQLite database: schema, loading, ER diagram and the SQL analytics queries."""
 import sqlite3
 
 import matplotlib
