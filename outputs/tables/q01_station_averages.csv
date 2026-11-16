@@ -1,0 +1,13 @@
+name,area_type,avg_pm25,avg_pm10,readings
+Dongsi,Urban,86.1,110.5,35064
+Nongzhanguan,Urban,85.1,109.5,35064
+Wanshouxigong,Urban,85.0,112.5,35064
+Gucheng,Urban,84.0,119.2,35064
+Wanliu,Urban,83.4,110.7,35064
+Guanyuan,Urban,83.0,109.2,35064
+Aotizhongxin,Urban,82.9,110.2,35064
+Tiantan,Urban,82.0,106.6,35064
+Shunyi,Suburban,79.7,99.2,35064
+Changping,Suburban,71.2,94.9,35064
+Huairou,Rural,69.6,91.8,35064
+Dingling,Rural,66.3,84.0,35064

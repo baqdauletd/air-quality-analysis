@@ -1,0 +1,11 @@
+{
+  "rows": 420768,
+  "stations": 12,
+  "period": [
+    "2013-03-01 00:00:00",
+    "2017-02-28 23:00:00"
+  ],
+  "duplicates_removed": 0,
+  "memory_default_dtypes_mb": 101.3,
+  "memory_optimized_dtypes_mb": 22.1
+}

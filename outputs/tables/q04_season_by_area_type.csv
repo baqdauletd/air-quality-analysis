@@ -1,0 +1,13 @@
+area_type,season,avg_pm25
+Rural,Winter,78.7
+Rural,Spring,69.5
+Rural,Autumn,68.4
+Rural,Summer,55.2
+Suburban,Winter,89.8
+Suburban,Autumn,76.0
+Suburban,Spring,74.9
+Suburban,Summer,61.1
+Urban,Winter,101.6
+Urban,Autumn,87.2
+Urban,Spring,79.4
+Urban,Summer,67.8
