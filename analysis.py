@@ -1,4 +1,3 @@
-"""Exploratory data analysis and visualizations."""
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -17,7 +16,6 @@ def describe_data(df):
 
 
 def iqr_outliers(df, cols=None):
-    """Number and share of outliers per column using the 1.5*IQR rule."""
     rows = []
     for col in cols or config.POLLUTANTS:
         q1, q3 = df[col].quantile([0.25, 0.75])
@@ -89,8 +87,39 @@ def plot_correlation(df):
     return _save(fig, "05_correlation_heatmap.png")
 
 
+def plot_mean_vs_median(df, col="PM2.5", filename="10_mean_vs_median_pm25.png"):
+    """Dumbbell chart: median and mean of hourly values per station (the gap shows the skew)."""
+    stats = df.groupby("station", observed=True)[col].agg(["mean", "median"]).sort_values("mean")
+    rows = list(range(len(stats)))
+    fig, ax = plt.subplots(figsize=(5.2, 3.6))
+    ax.hlines(rows, stats["median"], stats["mean"], color="#9aa5ad", linewidth=2, zorder=1)
+    ax.scatter(stats["median"], rows, color="#E07A2F", s=40, label="median", zorder=2)
+    ax.scatter(stats["mean"], rows, color="#0E7C86", s=40, label="mean", zorder=2)
+    ax.set_yticks(rows)
+    ax.set_yticklabels(stats.index, fontsize=10)
+    ax.tick_params(axis="x", labelsize=10)
+    ax.set_xlabel(f"{col}, ug/m3 (hourly values)", fontsize=10)
+    ax.legend(loc="lower right", fontsize=10, frameon=False)
+    ax.grid(axis="y", visible=False)
+    return _save(fig, filename)
+
+
+def plot_monthly_mean(df, col="PM2.5", filename="11_monthly_mean_pm25.png"):
+    """Average value for each calendar month (all stations, all years); winter and summer highlighted."""
+    monthly = df.groupby(df["ts"].dt.month)[col].mean()
+    colors = ["#0E7C86" if m in (12, 1, 2) else "#E07A2F" if m in (6, 7, 8) else "#B7C4CB" for m in monthly.index]
+    names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    fig, ax = plt.subplots(figsize=(7, 3.8))
+    ax.bar(names, monthly.values, color=colors)
+    for i, v in enumerate(monthly.values):
+        ax.text(i, v + 1.5, f"{v:.0f}", ha="center", fontsize=9)
+    ax.set_ylabel(f"{col}, ug/m3")
+    ax.set_title(f"Average {col} by calendar month (teal = winter, orange = summer)", fontsize=10)
+    ax.grid(axis="x", visible=False)
+    return _save(fig, filename)
+
+
 def plot_interactive(df):
-    """Interactive Plotly chart (HTML). Returns None if plotly is not installed."""
     if not has_module("plotly"):
         return None
     import plotly.express as px
@@ -106,11 +135,10 @@ def plot_interactive(df):
 
 
 def run_eda(df):
-    """Run the whole EDA step; saves tables and figures."""
     ensure_dirs()
     describe_data(df).to_csv(config.TABLE_DIR / "descriptive_stats.csv")
     iqr_outliers(df).to_csv(config.TABLE_DIR / "iqr_outliers.csv", index=False)
     correlation_matrix(df).to_csv(config.TABLE_DIR / "correlation.csv")
     figures = [plot_boxplot_by_station(df), plot_monthly_by_area(df), plot_season_by_station(df),
-               plot_hourly_profile(df), plot_correlation(df), plot_interactive(df)]
+               plot_hourly_profile(df), plot_correlation(df), plot_mean_vs_median(df), plot_monthly_mean(df), plot_interactive(df)]
     return [f for f in figures if f is not None]
