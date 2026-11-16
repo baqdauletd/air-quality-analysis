@@ -31,7 +31,7 @@ python main.py --all        # runs every step, writes tables and figures to outp
 python main.py              # interactive menu (options 1-9)
 streamlit run app.py        # dashboard (run main.py --all first, it needs the database)
 ```
-The menu keeps working without `statsmodels`, `plotly` and `pyarrow`: decomposition uses an own implementation of the same classical algorithm, the interactive chart is skipped, and the Parquet comparison is marked as skipped. Install all packages from `requirements.txt` to get everything.
+Install all packages from `requirements.txt` to get everything.
 The dashboard needs `plotly` and `streamlit`.
 
 ## Notes
