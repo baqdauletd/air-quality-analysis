@@ -1,6 +1,7 @@
 # Air Quality Across Monitoring Sites in Beijing
 
-Final project, *Programming for Data Analysis and Database* (Applied AI, Master's, Astana IT University).
+Final project, Programming for Data Analysis and Database (Applied AI, Master's, Astana IT University).
+
 Topic 2, Cluster 1: seasonal PM2.5/PM10 variation, site comparison and weather influence.
 
 **Team:** Bakdaulet Dauletov and Ainur Taskynova (AAI-2603M)
@@ -30,12 +31,10 @@ python main.py --all        # runs every step, writes tables and figures to outp
 python main.py              # interactive menu (options 1-9)
 streamlit run app.py        # dashboard (run main.py --all first, it needs the database)
 ```
-The menu keeps working without `statsmodels`, `plotly` and `pyarrow`: decomposition uses an own implementation of the same classical algorithm, the interactive chart is skipped, and the Parquet comparison is marked as skipped. Install all packages from `requirements.txt` to get everything.
+Install all packages from `requirements.txt` to get everything.
 The dashboard needs `plotly` and `streamlit`.
 
 ## Notes
-- Area type (Urban / Suburban / Rural) is our assumption based on the station location (`config.py`).
-- The dataset has about 420K rows (31 MB), below the recommended 500K rows / 200 MB.
 - Years 2013 and 2017 are partial (March-December 2013, January-February 2017).
 - The written report is in `report/`, the slides in `presentation/`.
 
