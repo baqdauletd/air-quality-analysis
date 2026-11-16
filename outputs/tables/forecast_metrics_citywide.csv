@@ -1,6 +1,6 @@
 model,MAE,RMSE,time_ms,peak_memory_MB
-Linear Regression (lags + weather + month),37.09,54.32,2.66,0.375
-Linear Regression (lags only),40.11,56.07,2.72,0.184
-Baseline: naive (yesterday),43.25,63.3,0.08,0.003
-Moving average (7 days),52.62,72.05,0.05,0.002
-Baseline: seasonal naive (same weekday last week),67.94,98.47,0.04,0.002
+Linear Regression (lags + weather + month),37.06,54.28,2.94,0.373
+Linear Regression (lags only),40.09,56.05,5.57,0.18
+Baseline: naive (yesterday),43.19,63.26,0.22,0.002
+Moving average (7 days),52.61,72.08,0.09,0.002
+Baseline: seasonal naive (same weekday last week),67.96,98.51,0.11,0.002

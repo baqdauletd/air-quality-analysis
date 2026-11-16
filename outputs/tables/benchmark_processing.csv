@@ -1,5 +1,5 @@
 approach,time_s,peak_memory_MB
-"Baseline: pandas, raw CSV, default dtypes (load + aggregate)",0.37,115.7
-"A: pandas, optimised dtypes, cleaned CSV (load + aggregate)",0.425,47.0
-"B: SQL (SQLite GROUP BY, indexed)",0.234,0.1
-C: Parquet (column read + aggregate),0.061,24.2
+"Baseline: pandas, raw CSV, default dtypes (load + aggregate)",0.547,115.9
+"A: pandas, optimised dtypes, cleaned CSV (load + aggregate)",0.299,32.6
+"B: SQL (SQLite GROUP BY, indexed)",0.301,0.1
+C: Parquet (skipped - pyarrow not installed),,

@@ -1,5 +1,4 @@
 storage,size_MB
 raw CSV files (12),31.0
-clean CSV,46.1
+clean CSV,46.0
 SQLite database,57.1
-clean Parquet,6.4
