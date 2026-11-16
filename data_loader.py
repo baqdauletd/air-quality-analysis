@@ -53,6 +53,21 @@ def missing_report(df):
     return pd.DataFrame({"missing": miss, "percent": (miss / len(df) * 100).round(2)})
 
 
+def fill_short_gaps(series, max_gap, method="interpolate"):
+    """Fill runs of missing values that are at most `max_gap` long; leave longer runs untouched.
+
+    (pandas `limit=` alone would fill the first `max_gap` values of a longer gap.)
+    """
+    missing = series.isna()
+    run_id = (missing != missing.shift()).cumsum()
+    run_length = missing.groupby(run_id).transform("sum")
+    if method == "ffill":
+        filled = series.ffill()
+    else:
+        filled = series.interpolate(limit_area="inside")
+    return filled.where(~(missing & (run_length > max_gap)))
+
+
 def clean_data(df, max_gap=config.MAX_GAP_HOURS):
     """Build timestamp, remove duplicates, fill short gaps, add area type."""
     df = df.drop(columns=["No"], errors="ignore").copy()
@@ -62,11 +77,12 @@ def clean_data(df, max_gap=config.MAX_GAP_HOURS):
     removed = before - len(df)
     df = df.sort_values(["station", "ts"]).reset_index(drop=True)
 
-    # fill gaps of at most `max_gap` hours inside each station (hourly data)
+    # fill gaps of at most `max_gap` hours inside each station (hourly data);
+    # longer gaps are left completely missing
     grouped = df.groupby("station", observed=True)
     for col in config.NUMERIC_COLS:
-        df[col] = grouped[col].transform(lambda s: s.interpolate(limit=max_gap, limit_area="inside"))
-    df["wd"] = grouped["wd"].transform(lambda s: s.ffill(limit=max_gap))
+        df[col] = grouped[col].transform(lambda s: fill_short_gaps(s, max_gap))
+    df["wd"] = grouped["wd"].transform(lambda s: fill_short_gaps(s.astype(object), max_gap, method="ffill"))
     df["wd"] = df["wd"].astype("category")
     df["area_type"] = df["station"].astype(str).map(config.AREA_TYPE).astype("category")
     df["season"] = df["month"].map(config.SEASONS).astype("category")
