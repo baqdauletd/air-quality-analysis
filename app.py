@@ -1,6 +1,7 @@
 """Streamlit dashboard.   Run:  streamlit run app.py   (after  python main.py --all)"""
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 import config
@@ -19,6 +20,26 @@ def load_daily():
                AVG(w.temp) AS temp, AVG(w.wspm) AS wspm
         FROM pollution p JOIN stations s USING (station_id) JOIN weather w USING (reading_id)
         GROUP BY s.name, date(p.ts)""").assign(date=lambda d: pd.to_datetime(d["date"]))
+
+
+@st.cache_data
+def load_missing():
+    """Hours and missing hours per station and month (after cleaning), counted in SQLite."""
+    cols = ["pm25", "pm10", "so2", "no2", "co", "o3"]
+    sums = ", ".join(f"SUM(p.{c} IS NULL) AS {c}" for c in cols)
+    return db.run_query(f"""
+        SELECT s.name AS station, p.year, p.month, COUNT(*) AS hours, {sums}
+        FROM pollution p JOIN stations s USING (station_id)
+        GROUP BY s.name, p.year, p.month""")
+
+
+@st.cache_data
+def load_missing_summary():
+    """Missing values per column before and after cleaning (written by main.py)."""
+    path = config.TABLE_DIR / "missing_values.csv"
+    if not path.exists():
+        return None
+    return pd.read_csv(path, index_col=0)
 
 
 if not config.DB_PATH.exists():
@@ -51,7 +72,7 @@ c1.metric(f"Mean {pollutant.upper()}", f"{view[pollutant].mean():.1f}")
 c2.metric("Highest daily mean", f"{view[pollutant].max():.0f}")
 c3.metric("Stations selected", len(stations))
 
-tab1, tab2, tab3, tab4 = st.tabs(["Time series", "Seasons", "Stations", "Weather link"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Time series", "Seasons", "Stations", "Weather link", "Data quality"])
 with tab1:
     st.plotly_chart(px.line(series, x="date", y=pollutant, color="station"), use_container_width=True)
 with tab2:
@@ -60,8 +81,63 @@ with tab2:
     st.plotly_chart(px.bar(seas, x="season", y=pollutant, color="area_type", barmode="group",
                            category_orders={"season": config.SEASON_ORDER}), use_container_width=True)
 with tab3:
-    st.plotly_chart(px.box(view, x="station", y=pollutant, color="area_type"), use_container_width=True)
+    stats = view.groupby("station")[pollutant].agg(["mean", "median"]).sort_index()   # alphabetical
+    order = list(stats.index)                # same station order in both charts
+    layout = dict(height=450, margin=dict(l=70, r=20, t=80, b=90), xaxis_tickangle=-45,
+                  legend=dict(orientation="h", y=1.12, x=0))   # legend above, so both plots have the same width
+    box = px.box(view, x="station", y=pollutant, color="area_type", category_orders={"station": order})
+    box.update_layout(title=f"Distribution of daily {pollutant.upper()} by station", **layout)
+    st.plotly_chart(box, use_container_width=True)
+    dumbbell = go.Figure()
+    for name, row in stats.iterrows():       # grey line between median and mean = size of the gap
+        dumbbell.add_trace(go.Scatter(x=[name, name], y=[row["median"], row["mean"]], mode="lines",
+                                      line=dict(color="#9aa5ad", width=3), showlegend=False, hoverinfo="skip"))
+    dumbbell.add_trace(go.Scatter(x=stats.index, y=stats["median"], mode="markers", name="median",
+                                  marker=dict(color="#E07A2F", size=11)))
+    dumbbell.add_trace(go.Scatter(x=stats.index, y=stats["mean"], mode="markers", name="mean",
+                                  marker=dict(color="#0E7C86", size=11)))
+    dumbbell.update_layout(title=f"Mean vs median of daily {pollutant.upper()} by station",
+                           yaxis_title=f"{pollutant.upper()} (daily means)",
+                           xaxis=dict(categoryorder="array", categoryarray=order), **layout)
+    st.plotly_chart(dumbbell, use_container_width=True)
+    by_season = (view.assign(season=view.month.map(config.SEASONS))
+                 .groupby(["station", "season"])[pollutant].mean().reset_index())
+    st.plotly_chart(px.bar(by_season, x="station", y=pollutant, color="season", barmode="group",
+                           category_orders={"season": config.SEASON_ORDER},
+                           title=f"Seasonal mean {pollutant.upper()} by station"),
+                    use_container_width=True)
 with tab4:
-    x = st.selectbox("Weather variable", ["temp", "wspm"])
-    sample = view.dropna(subset=[pollutant, x]).sample(min(4000, len(view)), random_state=1)
+    weather_names = {"temp": "Temperature (temp)", "wspm": "Wind speed (wspm)"}
+    x = st.selectbox("Weather variable", list(weather_names), format_func=weather_names.get)
+    valid = view.dropna(subset=[pollutant, x])          # rows with both values present
+    sample = valid.sample(min(4000, len(valid)), random_state=1) if len(valid) else valid
     st.plotly_chart(px.scatter(sample, x=x, y=pollutant, color="area_type", opacity=0.5), use_container_width=True)
+with tab5:
+    summary = load_missing_summary()
+    if summary is not None:
+        long = (summary[["percent_before", "percent_after"]]
+                .rename(columns={"percent_before": "before cleaning", "percent_after": "after cleaning"})
+                .reset_index().rename(columns={"index": "column"})
+                .melt(id_vars="column", var_name="stage", value_name="missing, %"))
+        st.plotly_chart(px.bar(long, x="column", y="missing, %", color="stage", barmode="group"),
+                        use_container_width=True)
+        st.dataframe(summary.rename(columns={"missing_before": "missing (before)", "percent_before": "% (before)",
+                                             "missing_after": "missing (after)", "percent_after": "% (after)"}),
+                     use_container_width=True)
+
+    miss = load_missing()
+    miss = miss[miss.year.between(*years) & miss.station.isin(stations)]
+    st.subheader("After cleaning, by stations")
+    by_station = miss.groupby("station")[[pollutant, "hours"]].sum()
+    by_station["missing, %"] = 100 * by_station[pollutant] / by_station["hours"]
+    st.plotly_chart(px.bar(by_station.reset_index().sort_values("missing, %", ascending=False),
+                           x="station", y="missing, %"), use_container_width=True)
+
+    miss = miss.assign(period=miss.year.astype(str) + "-" + miss.month.astype(str).str.zfill(2))
+    grid = miss.groupby(["station", "period"])[[pollutant, "hours"]].sum()
+    grid["missing, %"] = 100 * grid[pollutant] / grid["hours"]
+    heat = grid["missing, %"].unstack("period")
+    st.plotly_chart(px.imshow(heat, aspect="auto", color_continuous_scale="Reds",
+                              labels={"x": "month", "y": "station", "color": "missing, %"},
+                              title="Missing data - stations x months"),
+                    use_container_width=True)
